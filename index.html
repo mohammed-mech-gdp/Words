@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Live Online Bidding & Word Cloud</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJ2CgkkzL1qpb_A3kWuxzdvRzgb3LfmR0",
+            authDomain: "cloud-58bf0.firebaseapp.com",
+            databaseURL: "https://cloud-58bf0-default-rtdb.firebaseio.com",
+            projectId: "cloud-58bf0",
+            storageBucket: "cloud-58bf0.firebasestorage.app",
+            messagingSenderId: "699728967826",
+            appId: "1:699728967826:web:a72c322ee65c1d3b1e0e4b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const wordsRef = ref(db, "words");
+
+        window.submitWord = () => {
+            const word = document.getElementById("wordInput").value.trim();
+            if (word) {
+                push(wordsRef, word);
+                document.getElementById("wordInput").value = "";
+            }
+        };
+
+        window.resetWordCloud = () => {
+            const pin = prompt("Enter PIN to reset word cloud:");
+            if (pin === "6666") {
+                remove(wordsRef).then(() => {
+                    alert("Word cloud has been reset!");
+                }).catch((error) => {
+                    alert("Error resetting word cloud: " + error.message);
+                });
+            } else {
+                alert("Incorrect PIN! Reset not allowed.");
+            }
+        };
+
+        function updateWordCloud(words) {
+            const canvas = document.getElementById("wordCloudCanvas");
+            WordCloud(canvas, { list: words, gridSize: 10, weightFactor: (size) => size * 4, color: "random-dark" });
+        }
+
+        onValue(wordsRef, (snapshot) => {
+            const words = snapshot.val();
+            const wordCount = {};
+
+            if (words) {
+                Object.values(words).forEach(word => {
+                    wordCount[word] = (wordCount[word] || 0) + 1;
+                });
+            }
+
+            const wordArray = Object.entries(wordCount).map(([word, count]) => [word, count * 10]);
+            updateWordCloud(wordArray);
+        });
+    </script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+        .container { max-width: 90%; margin: auto; padding: 15px; }
+        .input-container { display: flex; flex-direction: column; align-items: center; }
+        button, input { padding: 15px; margin: 10px 0; width: 100%; max-width: 300px; font-size: 25px; }
+        h2 { font-size: 50px; } /* Increase the size of the "What is Procurement?" text */
+        button { font-size: 35px; } /* Increase the font size of the submit button text */
+        .golden-box { background-color: gold; padding: 20px; font-weight: bold; border-radius: 5px; margin-top: 20px; }
+        .footer-text { color: #007bff; font-weight: bold; font-size: 18px; margin-top: 20px; }
+        .reset-button { background-color: green; color: white; padding: 3px 6px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; display: block; margin: 10px auto; }
+    </style>
+</head>
+<body>
+    <img src="header-image.jpg" alt="Header Image" class="header-image">
+    <div class="container">
+        <h2>What is an Incident?</h2>
+        <form onsubmit="event.preventDefault(); submitWord();">
+            <div class="input-container">
+                <input type="text" id="wordInput" placeholder="Enter a word">
+                <button type="submit">Submit Word</button>
+            </div>
+        </form>
+        <canvas id="wordCloudCanvas" width="800" height="600"></canvas>
+        <button class="reset-button" onclick="resetWordCloud()">Reset</button>
+    </div>
+    <div class="footer-text">
+        <p>Mohammed Al Balushi, Mech Eng GDP</p>
+    </div>
+</body>
+</html>
